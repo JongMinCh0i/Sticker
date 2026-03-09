@@ -1,0 +1,7 @@
+# ── Caddyfile ─────────────────────────────────────────────────────────────────
+# Replace YOUR_DOMAIN.COM with your actual domain (e.g. myproxy.example.com)
+# Caddy automatically obtains and renews a Let's Encrypt certificate.
+
+YOUR_DOMAIN.COM {
+    reverse_proxy app:8080
+}

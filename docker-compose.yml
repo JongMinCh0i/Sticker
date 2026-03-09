@@ -1,0 +1,71 @@
+version: "3.9"
+
+# ── Deployment topology ───────────────────────────────────────────────────────
+#
+#   Internet → 도메인 → 집 공인IP → 공유기 포트포워딩(80/443)
+#                                    → WSL2 Docker
+#                                        ├ caddy  (리버스 프록시 + 자동 HTTPS)
+#                                        ├ app    (Spring Boot)
+#                                        └ postgres
+#
+# Usage:
+#   cp .env.example .env    # fill in secrets
+#   docker-compose up -d
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    depends_on:
+      - app
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/claudeproxy
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      APP_USERNAME: ${APP_USERNAME:-admin}
+      APP_PASSWORD: ${APP_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: claudeproxy
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d claudeproxy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  internal:
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
