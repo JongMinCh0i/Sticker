@@ -18,6 +18,7 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final MessageRepository messageRepository;
     private final ClaudeService claudeService;
+    private final EmailService emailService;
 
     @Transactional
     public ChatRoom createChatRoom() {
@@ -75,6 +76,9 @@ public class ChatService {
 
         // Touch updatedAt on chat room so the list sorts correctly
         chatRoomRepository.save(chatRoom);
+
+        // Send email notification asynchronously (fire-and-forget)
+        emailService.sendAssistantReply(chatRoom.getTitle(), userContent, assistantContent);
 
         return assistantMessage;
     }

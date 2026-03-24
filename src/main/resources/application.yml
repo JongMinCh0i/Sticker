@@ -18,6 +18,17 @@ spring:
     encoding: UTF-8
     mode: HTML
     cache: false                # disable in dev; set true in prod
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: ${PORT:8080}
@@ -30,6 +41,9 @@ app:
   jwt:
     secret: ${JWT_SECRET:claude-proxy-secret-key-change-this-in-production}
     expiration-ms: ${JWT_EXPIRATION_MS:2592000000}   # 30 days
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    to: ${MAIL_TO:}
 
 # ── Anthropic SDK ─────────────────────────────────────────────────────────────
 anthropic:
